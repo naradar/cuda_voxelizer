@@ -36,7 +36,10 @@ char *OutputFormats[] = { "binvox file", "morton encoded blob", "obj file (point
 string filename = "";
 string filename_base = "";
 OutputFormat outputformat = OutputFormat::output_binvox;
-unsigned int gridsize = 256;
+unsigned int gridsizeX = 256;
+unsigned int gridsizeY = 256;
+unsigned int gridsizeZ = 256;
+
 bool useThrustPath = false;
 bool forceCPU = false;
 bool solidVoxelization = false;
@@ -130,9 +133,13 @@ void parseProgramParameters(int argc, char* argv[]){
 			}
 			i++;
 		}
-		else if (string(argv[i]) == "-s") {
-			gridsize = atoi(argv[i + 1]);
+		else if (string(argv[i]) == "-sX") {
+			gridsizeX = atoi(argv[i + 1]);
 			i++;
+    } else if (string(argv[i]) == "-sY") {
+      gridsizeY = atoi(argv[i + 1]);
+    } else if (string(argv[i]) == "-sZ") {
+      gridsizeZ = atoi(argv[i + 1]);
 		} else if (string(argv[i]) == "-h") {
 			printHelp();
 			exit(0);
@@ -164,8 +171,10 @@ void parseProgramParameters(int argc, char* argv[]){
 		exit(1);
 	}
 	fprintf(stdout, "[Info] Filename: %s \n", filename.c_str());
-	fprintf(stdout, "[Info] Grid size: %i \n", gridsize);
-	fprintf(stdout, "[Info] Output format: %s \n", OutputFormats[int(outputformat)]);
+	fprintf(stdout, "[Info] Grid size X: %i \n", gridsizeX);
+	fprintf(stdout, "[Info] Grid size Y: %i \n", gridsizeY);
+  fprintf(stdout, "[Info] Grid size Z: %i \n", gridsizeZ);
+  fprintf(stdout, "[Info] Output format: %s \n", OutputFormats[int(outputformat)]);
 	fprintf(stdout, "[Info] Using CUDA Thrust: %s (default: No)\n", useThrustPath ? "Yes" : "No");
 	fprintf(stdout, "[Info] Using CPU-based voxelization: %s (default: No)\n", forceCPU ? "Yes" : "No");
 	fprintf(stdout, "[Info] Using Solid Voxelization: %s (default: No)\n", solidVoxelization ? "Yes" : "No");
@@ -199,8 +208,10 @@ int main(int argc, char* argv[]) {
 	fprintf(stdout, "\n## VOXELISATION SETUP \n");
 	// Initialize our own AABox, pad it so it's a cube
 	AABox<glm::vec3> bbox_mesh_cubed = createMeshBBCube<glm::vec3>(AABox<glm::vec3>(trimesh_to_glm(themesh->bbox.min), trimesh_to_glm(themesh->bbox.max)));
-	// Create voxinfo struct and print all info
-	voxinfo voxelization_info(bbox_mesh_cubed, glm::uvec3(gridsize, gridsize, gridsize), themesh->faces.size());
+	AABox<glm::vec3> bbox_static_cubed = createMeshBBCubeStatic<glm::vec3>();
+
+  // Create voxinfo struct and print all info
+	voxinfo voxelization_info(bbox_static_cubed, bbox_mesh_cubed, glm::uvec3(gridsizeX, gridsizeY, gridsizeZ), themesh->faces.size());
 	voxelization_info.print();
 	// Compute space needed to hold voxel table (1 voxel / bit)
 	unsigned int* vtable; // Both voxelization paths (GPU and CPU) need this

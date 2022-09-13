@@ -56,11 +56,12 @@ struct AABox {
 // Voxelisation info (global parameters for the voxelization process)
 struct voxinfo {
 	AABox<glm::vec3> bbox;
-	glm::uvec3 gridsize;
+	AABox<glm::vec3> actualbbox;
+  glm::uvec3 gridsize;
 	size_t n_triangles;
 	glm::vec3 unit;
 
-	voxinfo(const AABox<glm::vec3> bbox, const glm::uvec3 gridsize, const size_t n_triangles)
+	voxinfo(const AABox<glm::vec3> bbox, const AABox<glm::vec3> actualbbox, const glm::uvec3 gridsize, const size_t n_triangles)
 		: gridsize(gridsize), bbox(bbox), n_triangles(n_triangles) {
 		unit.x = (bbox.max.x - bbox.min.x) / float(gridsize.x);
 		unit.y = (bbox.max.y - bbox.min.y) / float(gridsize.y);
@@ -68,7 +69,8 @@ struct voxinfo {
 	}
 
 	void print() {
-		fprintf(stdout, "[Voxelization] Bounding Box: (%f,%f,%f)-(%f,%f,%f) \n", bbox.min.x, bbox.min.y, bbox.min.z, bbox.max.x, bbox.max.y, bbox.max.z);
+		fprintf(stdout, "[Voxelization] Domain Bounding Box: (%f,%f,%f)-(%f,%f,%f) \n", bbox.min.x, bbox.min.y, bbox.min.z, bbox.max.x, bbox.max.y, bbox.max.z);
+    fprintf(stdout, "[Voxelization] Bounding Box: (%f,%f,%f)-(%f,%f,%f) \n", actualbbox.min.x, actualbbox.min.y, actualbbox.min.z, actualbbox.max.x, actualbbox.max.y, actualbbox.max.z);
 		fprintf(stdout, "[Voxelization] Grid size: %i %i %i \n", gridsize.x, gridsize.y, gridsize.z);
 		fprintf(stdout, "[Voxelization] Triangles: %zu \n", n_triangles);
 		fprintf(stdout, "[Voxelization] Unit length: x: %f y: %f z: %f\n", unit.x, unit.y, unit.z);
@@ -85,19 +87,31 @@ struct voxinfo {
 // (1, 1.5, 2) to (4,4.5,5), which is a cube with side 3
 //
 template <typename T>
-inline AABox<T> createMeshBBCube(AABox<T> box) {
-	AABox<T> answer(box.min, box.max); // initialize answer
-	glm::vec3 lengths = box.max - box.min; // check length of given bbox in every direction
-	float max_length = glm::max(lengths.x, glm::max(lengths.y, lengths.z)); // find max length
-	for (unsigned int i = 0; i < 3; i++) { // for every direction (X,Y,Z)
-		if (max_length == lengths[i]){
-			continue;
-		} else {
-			float delta = max_length - lengths[i]; // compute difference between largest length and current (X,Y or Z) length
-			answer.min[i] = box.min[i] - (delta / 2.0f); // pad with half the difference before current min
-			answer.max[i] = box.max[i] + (delta / 2.0f); // pad with half the difference behind current max
-		}
+inline AABox<T> createMeshBBCubeStatic() {
+	AABox<glm::vec3> answer;
+
+  for (unsigned int i = 0; i < 3; i++) { // for every direction (X,Y,Z)
+		answer.min[i] = -256.00; // pad with half the difference before current min
+		answer.max[i] = 256.00; // pad with half the difference behind current max
 	}
+
+	return answer;
+}
+
+template <typename T>
+inline AABox<T> createMeshBBCube(AABox<T> box) {
+  AABox<T> answer(box.min, box.max); // initialize answer
+  glm::vec3 lengths = box.max - box.min; // check length of given bbox in every direction
+  float max_length = glm::max(lengths.x, glm::max(lengths.y, lengths.z)); // find max length
+  for (unsigned int i = 0; i < 3; i++) { // for every direction (X,Y,Z)
+    if (max_length == lengths[i]){
+      continue;
+    } else {
+      float delta = max_length - lengths[i]; // compute difference between largest length and current (X,Y or Z) length
+      answer.min[i] = box.min[i] - (delta / 2.0f); // pad with half the difference before current min
+      answer.max[i] = box.max[i] + (delta / 2.0f); // pad with half the difference behind current max
+    }
+  }
 
 	// Next snippet adresses the problem reported here: https://github.com/Forceflow/cuda_voxelizer/issues/7
 	// Suspected cause: If a triangle is axis-aligned and lies perfectly on a voxel edge, it sometimes gets counted / not counted

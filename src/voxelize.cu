@@ -68,9 +68,9 @@ __global__ void voxelize_triangle(voxinfo info, float* triangle_data, unsigned i
 
 		// COMPUTE COMMON TRIANGLE PROPERTIES
 		// Move vertices to origin using bbox
-		glm::vec3 v0 = glm::vec3(triangle_data[t], triangle_data[t + 1], triangle_data[t + 2]) - glm::vec3(-256.0, -256.0, -256.0);
-		glm::vec3 v1 = glm::vec3(triangle_data[t + 3], triangle_data[t + 4], triangle_data[t + 5]) - glm::vec3(-256.0, -256.0, -256.0);
-		glm::vec3 v2 = glm::vec3(triangle_data[t + 6], triangle_data[t + 7], triangle_data[t + 8]) - glm::vec3(-256.0, -256.0, -256.0);
+		glm::vec3 v0 = glm::vec3(triangle_data[t], triangle_data[t + 1], triangle_data[t + 2]) - glm::vec3(-256.0, 0.0, -256.0);
+		glm::vec3 v1 = glm::vec3(triangle_data[t + 3], triangle_data[t + 4], triangle_data[t + 5]) - glm::vec3(-256.0, 0.0, -256.0);
+		glm::vec3 v2 = glm::vec3(triangle_data[t + 6], triangle_data[t + 7], triangle_data[t + 8]) - glm::vec3(-256.0, 0.0, -256.0);
 		// Edge vectors
 		glm::vec3 e0 = v1 - v0;
 		glm::vec3 e1 = v2 - v1;
